@@ -50,7 +50,7 @@ void setup()
   waitForResponse();
 
   mySerial.println("Done!"); // передача через Serial
-
+  // Загрузка начальных значений из EEPROM
   short_period = EEPROM.read(0);
   long_period = 2000000 / EEPROM.read(1);
   Timer1.initialize(long_period);
@@ -86,6 +86,7 @@ void loop() {
        
        byte freq = lowByte(command);
        short_period = highByte(command);
+       // Запись значений частоты и duty в EEPROM для последующего извлечения при старте контроллера.
        EEPROM.write(1, freq);
        EEPROM.write(0, highByte(command));
        
@@ -106,7 +107,8 @@ void loop() {
     
 void Timer1_action()
 {
-  int i = short_period * 14;
+  int i = short_period * 14; // Устанавливаем 1 ждём интервал кратный 14 тактов (Предположительно 16 тактов микросекунда минус 2 на комманды)
+  // в теории получаем в цикле while задержку кратную микросекунде 
   digitalWrite(ledPin, HIGH);
   while (i > 0) {
     i--;
