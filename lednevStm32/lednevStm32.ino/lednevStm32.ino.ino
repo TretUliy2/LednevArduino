@@ -19,15 +19,15 @@
 
 // the setup function runs once when you press reset or power the board
 byte short_period = 1;
-byte long_period = 254;
-
+byte long_period = 1;
+long very_long_period;
 void setup() {
   // initialize digital pin PB1 as an output.
-  long very_long_period = 500000 / long_period;
+  very_long_period = 500000 / long_period;
   Serial.begin(57600);
-  Serial1.begin(9600);
+  Serial3.begin(9600);
   pinMode(PC13, OUTPUT);
-  pinMode(PB11, OUTPUT);
+  //pinMode(PB11, OUTPUT);
   
   Timer1.setPeriod(1);
   Timer1.setChannel1Mode(TIMER_OUTPUTCOMPARE);
@@ -37,18 +37,20 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
-  digitalWrite(PC13, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(1000);              // wait for a second
-  digitalWrite(PC13, LOW);    // turn the LED off by making the voltage LOW
-  delay(1000);// wait for a second
+//  digitalWrite(PC13, HIGH);   // turn the LED on (HIGH is the voltage level)
+//  delay(1000);              // wait for a second
+//  digitalWrite(PC13, LOW);    // turn the LED off by making the voltage LOW
+//  delay(1000);// wait for a second
 
   
-  if (Serial1.available() > 0) {
-    int command = Serial1.parseInt();
+  if (Serial3.available() > 0) {
+    int command = Serial3.parseInt();
     if ( command != 0 ) {
       byte freq = lowByte(command);
       byte duty = highByte(command);
       short_period = duty;
+      very_long_period = 500000 / freq;
+      Timer1.setPeriod(very_long_period);
       
     } else {
         
@@ -57,8 +59,10 @@ void loop() {
 }
 
 void Timer_interrupt() {
-  GPIOB->regs->BSRR = 1 << 11;
-  delayMicroseconds(short_period);
-  GPIOB->regs->BRR = 1 << 11;
+  digitalWrite(PC13, !digitalRead(PC13));   // turn the LED on (HIGH is the voltage level)
+
+//  GPIOB->regs->BSRR = 1 << 11;
+//  delayMicroseconds(short_period);
+//  GPIOB->regs->BRR = 1 << 11;
   //digitalWrite(PB11, LOW);
 }
