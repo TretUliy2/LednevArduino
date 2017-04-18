@@ -1,3 +1,6 @@
+#include <EEPROM.h>
+#include <flash_stm32.h>
+
 /*
   Blink
   Turns on an LED on for one second, then off for one second, repeatedly.
@@ -18,18 +21,26 @@
 
 
 // the setup function runs once when you press reset or power the board
-byte short_period = 1;
-byte long_period = 1;
+uint16 short_period = 100;
+uint16 long_period = 1;
 long very_long_period;
+uint16 AddressWrite = 0x10;
+
 void setup() {
   // initialize digital pin PB1 as an output.
-  very_long_period = 500000 / long_period;
+
   Serial.begin(57600);
   Serial3.begin(9600);
   pinMode(PC13, OUTPUT);
-  //pinMode(PB11, OUTPUT);
+  pinMode(PB12, OUTPUT);
   
-  Timer1.setPeriod(1);
+  EEPROM.PageBase0 = 0x801F000;
+  EEPROM.PageBase1 = 0x801F800;
+  EEPROM.PageSize = 0x400;
+  EEPROM.read(AddressWrite, &long_period);
+  EEPROM.read(AddressWrite + 1, &short_period);
+  
+  very_long_period = 1000000 / long_period;
   Timer1.setChannel1Mode(TIMER_OUTPUTCOMPARE);
   Timer1.setPeriod(very_long_period);
   Timer1.attachInterrupt(0, Timer_interrupt);
@@ -48,21 +59,18 @@ void loop() {
     if ( command != 0 ) {
       byte freq = lowByte(command);
       byte duty = highByte(command);
+      EEPROM.write(AddressWrite, freq);
+      EEPROM.write(AddressWrite + 1, duty);
       short_period = duty;
-      very_long_period = 500000 / freq;
+      very_long_period = 1000000 / freq;
       Timer1.setPeriod(very_long_period);
-      
-    } else {
-        
     }
   }
 }
 
 void Timer_interrupt() {
-  digitalWrite(PC13, !digitalRead(PC13));   // turn the LED on (HIGH is the voltage level)
-
-//  GPIOB->regs->BSRR = 1 << 11;
-//  delayMicroseconds(short_period);
-//  GPIOB->regs->BRR = 1 << 11;
-  //digitalWrite(PB11, LOW);
+  digitalWrite(PC13, !digitalRead(PC13));
+  GPIOB->regs->BSRR = 1 << 12;
+  delayMicroseconds(short_period);
+  GPIOB->regs->BRR = 1 << 12;
 }
